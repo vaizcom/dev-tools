@@ -87,7 +87,7 @@ program.command("check").action(async (source) => {
   if (packages.length) {
     helpers.logWarning("linked packages");
     packages.forEach((package, index, arr) => {
-      console.log(` ${index === arr.length - 1 ? "└" : "╠"} ${package}`);
+      console.log(` ${index === arr.length - 1 ? "└" : "├"} ${package}`);
     });
   }
   if (!founded) {
