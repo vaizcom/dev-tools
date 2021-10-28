@@ -1,6 +1,6 @@
 {
   "name": "@worx-to/worx-dev-tools",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Worx dev tools",
   "bin": {
     "copy-packages": "./bin/copy-packages.js",
