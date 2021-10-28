@@ -5,7 +5,7 @@ const { Command } = require("commander");
 const fs = require("fs");
 const chalk = require("chalk");
 const path = require("path");
-const child_process = require("child_process");
+
 const packlist = require("npm-packlist");
 const helpers = require("../helpers");
 
@@ -16,7 +16,7 @@ program.option("-d, --debug", "output extra debugging");
 
 program.action(async (source) => {
   const packageJson = require(process.cwd() + "/package.json");
-  const configFileName = program.config || "worx-dev-tools.json";
+  const configFileName = "worx-dev-tools.json";
   let config;
 
   try {
@@ -37,7 +37,10 @@ program.action(async (source) => {
     return;
   }
 
-  console.log(chalk.green(`Package copied:`));
+  console.log("");
+  console.log(`📁 Copy package...`);
+
+  helpers.logSuccess(`package copied to:`);
   config.copyPackages.paths.forEach((path) => {
     const dest = `${path}/node_modules/${packageJson.name}`;
     console.log(chalk.magenta.bold(` ${program.opts().debug ? dest : path}`));
