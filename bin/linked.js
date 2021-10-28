@@ -31,47 +31,67 @@ const getLinked = async () => {
 };
 
 program.command("check").action(async (source) => {
-  const packages = await getLinked();
+  let packages = await getLinked();
 
   console.log("");
   console.log("🔍  Looking for linked packages...");
-  if (!packages.length) {
-    helpers.logSuccess("you have no linked packages");
-    return;
-  }
-
-  helpers.logWarning("linked packages");
-  packages.forEach((package) => {
-    console.log(" └─ " + package.replace("./node_modules/", ""));
-  });
-
+  let founded = false;
   try {
     const configFileName = "worx-dev-tools.json";
     const config = JSON.parse(fs.readFileSync(path.resolve(configFileName), "utf8"));
+    const packageJson = require(process.cwd() + "/package.json");
 
     const { dependencies } = config;
     if (!dependencies) {
       return;
     }
     const changedDeps = Object.values(dependencies).filter((dep) => dep.type !== "npm");
-
+    let foundedArr = [];
     if (changedDeps.length > 0) {
-      helpers.logWarning("also check your 'worx-dev-tools.dependencies'");
       for (const depKey in dependencies) {
         const dep = dependencies[depKey];
-        const color = {
+
+        if (dep.type === "link" && packages.includes(depKey)) {
+          packages = packages.filter((package) => depKey !== package);
+          foundedArr.push({ ...dep, name: depKey });
+        }
+        if (dep.type === "git" && /git|http/.test(packageJson.dependencies[depKey])) {
+          foundedArr.push({ ...dep, name: depKey });
+        }
+        if (dep.type === "local") {
+          if (fs.existsSync(`./node_modules/${depKey}/.copyrc.txt`)) {
+            foundedArr.push({ ...dep, name: depKey });
+          }
+        }
+      }
+      if (foundedArr.length) {
+        helpers.logWarning("founded with your 'worx-dev-tools.dependencies'");
+        const colors = {
           link: "blue",
           git: "red",
-          local: "yellow",
+          local: "green",
         };
-        if (dep.type !== "npm") {
-          console.log(` └─ ${depKey} installed as ${chalk[color[dep.type]](dep.type)}`);
-        }
+        foundedArr.forEach((dep, index, arr) => {
+          console.log(
+            ` ${index === arr.length - 1 ? "└" : "├"}─ ${dep.name} installed as ${chalk[colors[dep.type]](dep.type)}`
+          );
+        });
+        founded = true;
       }
     }
   } catch (error) {
     console.log(error);
     return;
+  }
+
+  if (packages.length) {
+    helpers.logWarning("linked packages");
+    packages.forEach((package, index, arr) => {
+      console.log(` ${index === arr.length - 1 ? "└" : "╠"} ${package}`);
+    });
+  }
+  if (!founded) {
+    helpers.logSuccess("you have no linked packages");
   }
 });
 
@@ -89,6 +109,7 @@ program
     }
 
     if (_packages.length === 0) {
+      helpers.logSuccess("you have no linked packages");
       return;
     }
 
@@ -97,9 +118,9 @@ program
     helpers.logSuccess("unlinked packages:");
 
     await Promise.all(
-      _packages.map(async (package) => {
+      _packages.map(async (package, index, arr) => {
         await exec(`yarn unlink ${package}`);
-        console.log(" └─ " + package);
+        console.log(` ${index === arr.length - 1 ? "└" : "├"}─ ${package}`);
       })
     );
     if (!options.skipInstall) {

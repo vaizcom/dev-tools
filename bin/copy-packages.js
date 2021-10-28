@@ -45,7 +45,7 @@ program.action(async (source) => {
     const dest = `${path}/node_modules/${packageJson.name}`;
     console.log(chalk.magenta.bold(` ${program.opts().debug ? dest : path}`));
     files.forEach((file, index, arr) => {
-      child_process.exec(`cp -rf ${file} ${dest}`);
+      child_process.exec(`cp -rf ${file.split("/")[0]} ${dest}`);
       if (program.opts().debug) {
         console.log(`   ${index === arr.length - 1 ? "╚" : "╠"}══ ${file}`);
       }

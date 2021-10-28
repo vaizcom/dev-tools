@@ -36,11 +36,11 @@ program.action(async (source) => {
   console.log(`🗑️  Remove trash types...`);
 
   helpers.logSuccess(`types cleared:`);
-  config.trashTypes.forEach((path) => {
+  config.trashTypes.forEach((path, index, arr) => {
     const dir = `./node_modules/@types/${path}/node_modules/@types/react/`;
 
     fs.rm(dir, { recursive: true }, () => {});
-    console.log(`   └─ ${chalk.magenta.bold(program.opts().debug ? dir : path)}`);
+    console.log(`   ${index === arr.length - 1 ? "└" : "├"}─ ${chalk.magenta.bold(program.opts().debug ? dir : path)}`);
   });
 });
 

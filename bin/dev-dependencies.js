@@ -18,6 +18,8 @@ const homedir = require("os").homedir();
 program.version(pjson.version);
 program.option("-d, --debug", "output extra debugging");
 
+const priority = ["git", "link", "local"];
+
 program.action(async (source) => {
   const configFileName = "worx-dev-tools.json";
   let config;
@@ -35,14 +37,27 @@ program.action(async (source) => {
   }
   console.log("");
   console.log(`⏳ Install dev-dependencies...`);
+  const depsArray = [];
 
-  let i = 0;
   for (const packageKey in dependencies) {
-    i++;
     if (!Object.hasOwnProperty.call(dependencies, packageKey)) {
       return;
     }
     const packageConfig = dependencies[packageKey];
+    depsArray.push({
+      ...packageConfig,
+      packageKey,
+      priority: priority.findIndex((item) => item === packageConfig.type),
+    });
+  }
+
+  depsArray.sort((a, b) => a.priority - b.priority);
+
+  let i = 0;
+
+  for (const packageConfig of depsArray) {
+    i++;
+    const packageKey = packageConfig.packageKey;
 
     if (packageConfig.type === "npm") {
       console.log(
@@ -71,7 +86,7 @@ program.action(async (source) => {
         const dest = `${current}/node_modules/${packageKey}`;
 
         files.forEach((file, index, arr) => {
-          child_process.exec(`cp -rf ${file} ${dest}`);
+          child_process.exec(`cp -rf ${file.split("/")[0]} ${dest}`);
           if (program.opts().debug) {
             console.log(`      ${index === arr.length - 1 ? "╚" : "╠"}══ ${file}`);
           }
@@ -83,6 +98,8 @@ program.action(async (source) => {
         if (semver.lt(packageJsonDependency.version, packageJsonDependencyInitial.version)) {
           console.log(`${chalk.yellow("warning")} You linked version are lower than installed in package.json`);
         }
+        await exec(`touch ${dest}/.copyrc.txt`);
+
         process.chdir(current);
       } catch (e) {
         helpers.logError(`Can't install local dependency ${chalk.bold(packageKey)}`, e.message);
@@ -137,13 +154,19 @@ program.action(async (source) => {
       );
 
       if (packageConfig.withDeps) {
+        let i = 0;
         for (const dep of packageConfig.withDeps) {
           const { stdout, stderr } = await exec(`yarn link ${dep}`);
           if (stderr) {
             helpers.logError(stderr);
             continue;
           }
-          console.log(`      └─ ${chalk.blueBright.bold(dep)} was linked with you current project`);
+          console.log(
+            `      ${i === packageConfig.withDeps.length - 1 ? "└" : "├"}─ ${chalk.blueBright.bold(
+              dep
+            )} was linked with you current project`
+          );
+          i++;
         }
       }
 
@@ -163,7 +186,6 @@ program.action(async (source) => {
       const { stdout, stderr } = await exec(`yarn add ${packageConfig.origin}#${packageConfig.head}`);
       process.stdout.clearLine();
       process.stdout.cursorTo(0);
-      process.stdout.write("\n");
       if (stderr) {
         if (/^Error/g.test(stderr)) {
           if (program.opts().debug) {
