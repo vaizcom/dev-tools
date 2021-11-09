@@ -25,7 +25,7 @@ module.exports = {
         if (!remoteUrl) {
           throw new UsageError(`Remote for ${this.a} didn't find. Add gitRemote first`);
         }
-        await this.cli.run(["add", `${this.a}@${remoteUrl}#${this.b}`]);
+        await this.cli.run(["up", `${this.a}@${remoteUrl}#${this.b}`]);
 
         return 0;
       }
