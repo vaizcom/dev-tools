@@ -83,7 +83,6 @@ Add section `dependencies` section to `worx-dev-tools.json`
 - **path** relative path to your local package. May effect only for `local` type
 - **origin** git repository origin (with protocol). May effect only for `git` type
 - **head** choose one of _branch/commitHash/tag_ in repo. May effect only for `git` type
-- **withDeps** array of dependencies to link _INSIDE_ of `linked` package. May effect only for `link` type
 
 ```json
 {
@@ -98,8 +97,7 @@ Add section `dependencies` section to `worx-dev-tools.json`
       "head": "master"
     },
     "@worx-to/icons": {
-      "type": "link",
-      "withDeps": ["react", "@reach/router"]
+      "type": "link"
     },
     "@worx-to/ui": {
       "type": "npm",

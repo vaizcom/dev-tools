@@ -112,29 +112,6 @@ program.action(async (source) => {
       const currentDir = process.cwd();
       const packageJsonDependencyInitial = require(process.cwd() + `/node_modules/${packageKey}/package.json`);
 
-      if (packageConfig.withDeps) {
-        for (const dep of packageConfig.withDeps) {
-          process.chdir(currentDir + `/node_modules/${dep}/`);
-          const removeLinkPath = `${homedir}/.config/yarn/link/${dep.split("/")[0]}`;
-          try {
-            const file = await fsPromises.lstat(`${homedir}/.config/yarn/link/${dep}`);
-            if (file.isSymbolicLink()) {
-              await exec(`rm -rf ${removeLinkPath}`);
-            }
-          } catch (e) {}
-          const { stdout, stderr } = await exec(`yarn link`);
-          if (stderr) {
-            if (stderr.includes(`"${dep}" registered`)) {
-              helpers.logError(`package ${dep} already registered in another project ()`);
-              console.log(`run 'rm -rf ${removeLinkPath}' manually`);
-            } else {
-              helpers.logError(stderr);
-            }
-            continue;
-          }
-        }
-      }
-
       process.chdir(currentDir);
 
       const { stdout, stderr } = await exec(`yarn link ${packageKey}`);
@@ -152,23 +129,6 @@ program.action(async (source) => {
           semver.lt(packageJsonDependency.version, packageJsonDependencyInitial.version) ? "red" : "green"
         ].bold(packageJsonDependency.version)}`
       );
-
-      if (packageConfig.withDeps) {
-        let i = 0;
-        for (const dep of packageConfig.withDeps) {
-          const { stdout, stderr } = await exec(`yarn link ${dep}`);
-          if (stderr) {
-            helpers.logError(stderr);
-            continue;
-          }
-          console.log(
-            `      ${i === packageConfig.withDeps.length - 1 ? "└" : "├"}─ ${chalk.blueBright.bold(
-              dep
-            )} was linked with you current project`
-          );
-          i++;
-        }
-      }
 
       if (semver.lt(packageJsonDependency.version, packageJsonDependencyInitial.version)) {
         helpers.logWarning("You linked version are lower than installed in package.json");

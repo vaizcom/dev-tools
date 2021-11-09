@@ -98,7 +98,6 @@ program.command("check").action(async (source) => {
 program
   .command("unlink")
   .option("-a, --all", "unlink all packages")
-  .option("-s, --skip-install", "skip force reinstall")
   .argument("[packages...]", "packages for unlink")
   .action(async (packages = [], options) => {
     const start = Date.now();
@@ -123,10 +122,6 @@ program
         console.log(` ${index === arr.length - 1 ? "└" : "├"}─ ${package}`);
       })
     );
-    if (!options.skipInstall) {
-      console.log("🚚 reinstall packages...");
-      await exec("yarn install --force");
-    }
     console.log(`✨  Done in ${(Date.now() - start) / 1000}s`);
   });
 
