@@ -1,6 +1,6 @@
 {
   "name": "@worx-to/worx-dev-tools",
-  "version": "2.1.1",
+  "version": "2.2.2",
   "description": "Worx dev tools",
   "bin": {
     "clean-types": "./bin/clean-types.js",
