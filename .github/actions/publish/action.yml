@@ -1,0 +1,84 @@
+name: 'Publish'
+description: 'Publish package to github npm repository'
+inputs:
+  version:
+    required: true
+  token:
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Get version
+      shell: bash
+      id: version
+      run: |
+        if ${{ github.ref_name == 'master'}}
+        then
+          echo "::set-output name=version::${{ inputs.version }}"
+        else
+          echo "::set-output name=version::$(node -p -e 'require(`./package.json`).version.replace(/(\d+\.\d+\.\d+)(.*)/, `$1`) + `-` + `${{ github.ref_name }}`.replace(/[-_\/]+/g, `.`)').${{ inputs.version }}"
+        fi
+
+    - uses: rubenesp87/semver-validation-action@0.0.6
+      name: Semver validation
+      with:
+        version: ${{ steps.version.outputs.version }}
+
+    - uses: actions/setup-node@v2
+      with:
+        node-version: '16.x'
+        registry-url: 'https://npm.pkg.github.com'
+        scope: '@worx-to'
+
+    - name: Install dependencies
+      shell: bash
+      run: yarn install --immutable --inline-builds
+
+    - name: Get yarn cache directory path
+      id: yarn-cache-dir-path
+      shell: bash
+      run: echo "::set-output name=dir::$(yarn config get cacheFolder)"
+
+    - uses: actions/cache@v2
+      name: Cache node_modules
+      id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
+      with:
+        path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+        key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-yarn-
+
+    - name: Set version
+      shell: bash
+      run: yarn uver -v ${{ steps.version.outputs.version }}
+
+    - name: Build package
+      shell: bash
+      run: yarn build
+
+    - run: yarn npm publish
+      shell: bash
+
+    - name: Get last commit message
+      id: last-commit-message
+      shell: bash
+      run: |
+        echo "::set-output name=msg::$(git log -1 --pretty=%s)"
+
+    - name: Commit changes
+      uses: stefanzweifel/git-auto-commit-action@v4
+      with:
+        commit_message: ${{ steps.last-commit-message.outputs.msg }}
+        commit_options: '--amend --no-edit'
+        push_options: '--force'
+        skip_fetch: true
+
+    - name: Upload release notes
+      if: ${{github.ref_name == 'master'}}
+      uses: Roang-zero1/github-create-release-action@master
+      with:
+        created_tag: v${{ steps.version.outputs.version }}
+        release_title: ${{ steps.version.outputs.version }}
+      env:
+        GITHUB_TOKEN: ${{ inputs.token }}
