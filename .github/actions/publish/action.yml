@@ -16,7 +16,7 @@ runs:
       shell: bash
       id: version
       run: |
-        if ${{ github.ref_name == ${{ inputs.defaultBranchName }}}}
+        if ${{ github.ref_name == inputs.defaultBranchName }}
         then
           echo "::set-output name=version::${{ inputs.version }}"
         else
@@ -78,7 +78,7 @@ runs:
         skip_fetch: true
 
     - name: Upload release notes
-      if: ${{github.ref_name == ${{ inputs.defaultBranchName }}}}
+      if: ${{github.ref_name == inputs.defaultBranchName }}
       uses: Roang-zero1/github-create-release-action@master
       with:
         created_tag: v${{ steps.version.outputs.version }}
