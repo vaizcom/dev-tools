@@ -1,19 +1,22 @@
-name: 'Publish'
-description: 'Publish package to github npm repository'
+name: "Publish"
+description: "Publish package to github npm repository"
 inputs:
   version:
     required: true
   token:
     required: true
+  defaultBranchName:
+    default: "master"
+    required: false
 
 runs:
-  using: 'composite'
+  using: "composite"
   steps:
     - name: Get version
       shell: bash
       id: version
       run: |
-        if ${{ github.ref_name == 'master'}}
+        if ${{ github.ref_name == ${{ inputs.defaultBranchName }}}}
         then
           echo "::set-output name=version::${{ inputs.version }}"
         else
@@ -27,9 +30,9 @@ runs:
 
     - uses: actions/setup-node@v2
       with:
-        node-version: '16.x'
-        registry-url: 'https://npm.pkg.github.com'
-        scope: '@worx-to'
+        node-version: "16.x"
+        registry-url: "https://npm.pkg.github.com"
+        scope: "@worx-to"
 
     - name: Install dependencies
       shell: bash
@@ -70,12 +73,12 @@ runs:
       uses: stefanzweifel/git-auto-commit-action@v4
       with:
         commit_message: ${{ steps.last-commit-message.outputs.msg }}
-        commit_options: '--amend --no-edit'
-        push_options: '--force'
+        commit_options: "--amend --no-edit"
+        push_options: "--force"
         skip_fetch: true
 
     - name: Upload release notes
-      if: ${{github.ref_name == 'master'}}
+      if: ${{github.ref_name == ${{ inputs.defaultBranchName }}}}
       uses: Roang-zero1/github-create-release-action@master
       with:
         created_tag: v${{ steps.version.outputs.version }}
